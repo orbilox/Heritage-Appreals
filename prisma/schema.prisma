@@ -87,6 +87,8 @@ model Employee {
   applications    Application[]
   kycProfile      KYCProfile?
   kycDocuments    KYCDocument[]
+  chatParticipant ChatParticipant[]
+  chatMessages    ChatMessage[]
 
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
@@ -304,6 +306,47 @@ model KYCDocument {
   updatedAt        DateTime  @updatedAt
 
   @@unique([employeeId, docType])
+}
+
+// ── Chat ──────────────────────────────────────────────────────────────────────
+
+model ChatRoom {
+  id           String             @id @default(cuid())
+  name         String?            // null for DMs
+  type         String             @default("CHANNEL") // CHANNEL | DIRECT | GROUP
+  description  String?
+  createdBy    String
+  isArchived   Boolean            @default(false)
+  participants ChatParticipant[]
+  messages     ChatMessage[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+}
+
+model ChatParticipant {
+  id         String   @id @default(cuid())
+  roomId     String
+  room       ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  lastReadAt DateTime @default(now())
+  joinedAt   DateTime @default(now())
+
+  @@unique([roomId, employeeId])
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  roomId     String
+  room       ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId   String
+  sender     Employee @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content    String
+  isEdited   Boolean  @default(false)
+  isDeleted  Boolean  @default(false)
+  replyToId  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Company {

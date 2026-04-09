@@ -16,7 +16,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <MobileNav userName={session.user.name ?? session.user.email} />
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto h-full">
           {children}
         </main>
       </div>
