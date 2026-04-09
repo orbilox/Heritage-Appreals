@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import KYCAdminActions from "@/components/kyc/kyc-admin-actions";
-import { KYC_DOCS } from "@/app/api/kyc/route";
+import { KYC_DOCS } from "@/lib/kyc-config";
 
 const profileStatusConfig: Record<string, { label: string; color: string; bg: string; variant: "success" | "warning" | "destructive" | "secondary" | "default" }> = {
   NOT_STARTED:  { label: "Not Started",    color: "text-gray-600",   bg: "bg-gray-50",    variant: "secondary" },
