@@ -14,7 +14,7 @@ interface KYCDoc {
   status: string;
   rejectionReason?: string | null;
   verifiedBy?: string | null;
-  verifiedAt?: string | null;
+  verifiedAt?: string | Date | null;
   isRequired: boolean;
 }
 
