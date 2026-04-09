@@ -1,0 +1,12 @@
+Environment Variables needed on Vercel:
+
+Key	Value
+NEXTAUTH_SECRET	BlK/S9sMKISgF0+9Mhjl6tBYBz8vRT787w+l/Crl1Tk=
+NEXTAUTH_URL	The live Vercel URL (e.g. https://your-app.vercel.app)
+DATABASE_URL	PostgreSQL connection string (pooled)
+DIRECT_URL	PostgreSQL connection string (direct)
+Schema is already set to PostgreSQL in prisma/schema.prisma — just needs a cloud DB like Neon (free).
+
+Build command in vercel.json is already configured to run prisma db push automatically on deploy.
+
+Let me know if you need anything else!
