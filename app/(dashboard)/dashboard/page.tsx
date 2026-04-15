@@ -320,201 +320,165 @@ async function EmployeeDashboard({ session }: { session: { user: { name?: string
   const today = new Date();
   const greeting = today.getHours() < 12 ? "morning" : today.getHours() < 17 ? "afternoon" : "evening";
 
+  const firstName = session?.user?.name?.split(" ")[0] ?? "there";
+  const initials = (session?.user?.name ?? "U").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+  const hoursWorked = data.todayAttendance?.hoursWorked ?? 0;
+
   return (
     <div className="flex flex-col min-h-full bg-gray-50">
-      {/* ── Welcome Banner ── */}
-      <div
-        className="relative overflow-hidden px-4 sm:px-6 py-5 sm:py-8"
-        style={{ background: "linear-gradient(135deg, #4C1D95 0%, #5B21B6 40%, #6D28D9 70%, #7C3AED 100%)" }}
-      >
-        <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-white/5" />
-        <div className="absolute right-24 top-4 w-32 h-32 rounded-full bg-white/5" />
-        <div className="absolute -left-8 bottom-0 w-48 h-24 rounded-full bg-white/5" />
-        <div className="relative z-10 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-purple-200 text-xs sm:text-sm font-medium">{data.employee?.department?.name ?? ""}</p>
-            <h1 className="text-xl sm:text-3xl font-bold text-white mt-0.5">
-              Good {greeting}, {session?.user?.name?.split(" ")[0] ?? "there"}!
-            </h1>
-            <p className="text-purple-200 text-xs sm:text-sm mt-1">
-              {data.employee?.designation ?? "Employee"} · {today.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
-            </p>
+
+      {/* ════════════════════════════════════════════════
+          MOBILE LAYOUT  (lg:hidden)
+      ════════════════════════════════════════════════ */}
+      <div className="lg:hidden flex flex-col bg-gray-100 min-h-screen">
+
+        {/* ── Top Search Bar ── */}
+        <div className="bg-white px-4 py-3 flex items-center gap-3 shadow-sm sticky top-0 z-10">
+          <div className="w-9 h-9 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+            {initials}
           </div>
-          {/* Clock-in status badge in banner on mobile */}
-          <div className="shrink-0 mt-1">
-            {checkIn && !checkOut && (
-              <span className="flex items-center gap-1 text-xs bg-green-400/20 text-green-300 border border-green-400/30 rounded-full px-2 py-1">
-                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                Active
-              </span>
-            )}
-            {checkOut && (
-              <span className="text-xs text-green-300">✓ Done</span>
-            )}
+          <div className="flex-1 bg-gray-100 rounded-full px-4 py-2">
+            <span className="text-gray-400 text-sm">Search your colleagues</span>
+          </div>
+          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+            <Users className="w-4 h-4 text-gray-500" />
           </div>
         </div>
-      </div>
 
-      {/* ── Mobile Quick Actions Row ── */}
-      <div className="lg:hidden px-4 pt-4 grid grid-cols-4 gap-2">
-        {[
-          { href: "/attendance", label: "Attendance", icon: Clock, color: "bg-purple-100 text-purple-600" },
-          { href: "/leaves", label: "Leaves", icon: Calendar, color: "bg-orange-100 text-orange-600" },
-          { href: "/payroll", label: "Pay", icon: DollarSign, color: "bg-teal-100 text-teal-600" },
-          { href: "/performance", label: "Goals", icon: TrendingUp, color: "bg-blue-100 text-blue-600" },
-        ].map((a) => (
-          <a key={a.href} href={a.href} className="flex flex-col items-center gap-1.5 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${a.color}`}>
-              <a.icon className="w-4 h-4" />
-            </div>
-            <span className="text-[10px] font-medium text-gray-600">{a.label}</span>
-          </a>
-        ))}
-      </div>
+        {/* ── Scrollable Content ── */}
+        <div className="flex-1 overflow-y-auto space-y-3 p-4">
 
-      {/* ── Main Content ── */}
-      <div className="flex-1 p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-5">
-
-        {/* ── LEFT: Quick Access ── */}
-        <div className="lg:col-span-2 space-y-4 order-2 lg:order-none">
-          <h2 className="hidden lg:block text-sm font-semibold text-gray-500 uppercase tracking-wide">Quick Access</h2>
-
-          {/* Time Today — hidden on mobile (shown separately above) */}
-          <div className="hidden lg:block">
-            <TimeWidget checkIn={checkIn} checkOut={checkOut} />
-          </div>
-
-          {/* Holidays Carousel */}
-          <HolidayCarousel holidays={holidays} />
-
-          {/* On Leave Today */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-orange-500" />
-                On Leave Today
-              </h3>
-              <a href="/leaves" className="text-xs text-purple-600 hover:underline">View All</a>
-            </div>
-            {data.onLeaveToday.length === 0 ? (
-              <div className="flex items-center gap-3 py-2">
-                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center">
-                  <UserCheck className="w-5 h-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Everyone is working today!</p>
-                  <p className="text-xs text-gray-400">No one is on leave.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {data.onLeaveToday.map((l) => (
-                  <div key={l.id} className="flex items-center gap-2">
-                    <Avatar name={`${l.employee.firstName} ${l.employee.lastName}`} size="sm" color="bg-orange-500" />
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-gray-800 truncate">{l.employee.firstName} {l.employee.lastName}</p>
-                      <p className="text-xs text-gray-400 truncate">{l.employee.designation ?? l.employee.department?.name ?? ""}</p>
-                    </div>
+          {/* Recent Actions */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center mb-4">Recent Actions</p>
+            <div className="flex justify-around">
+              {[
+                { href: "/leaves",      icon: Calendar,   label: "Apply\nLeave" },
+                { href: "/attendance",  icon: Clock,      label: "My\nAttendance" },
+                { href: "/payroll",     icon: DollarSign, label: "View\nPayslip" },
+                { href: "/kyc",         icon: UserCheck,  label: "My\nKYC" },
+                { href: "/chat",        icon: Megaphone,  label: "Team\nChat" },
+              ].map((a) => (
+                <a key={a.href} href={a.href} className="flex flex-col items-center gap-2">
+                  <div className="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center">
+                    <a.icon className="w-6 h-6 text-purple-600" />
                   </div>
-                ))}
-              </div>
-            )}
+                  <span className="text-[10px] text-gray-600 text-center leading-tight whitespace-pre-line">{a.label}</span>
+                </a>
+              ))}
+            </div>
           </div>
 
-          {/* My Recent Leaves */}
-          {data.recentLeaves.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-700">My Leave History</h3>
-                <a href="/leaves" className="text-xs text-purple-600 hover:underline">View All</a>
+          {/* Clock-in Card */}
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-4 pt-3 pb-1">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                SHIFT TODAY: GENERAL (9:00 AM – 5:30 PM)
+              </p>
+            </div>
+            <div className="flex items-center gap-3 px-4 py-2">
+              <div className="w-11 h-11 bg-purple-100 rounded-xl flex items-center justify-center shrink-0">
+                <Clock className="w-5 h-5 text-purple-600" />
               </div>
-              <div className="space-y-2">
-                {data.recentLeaves.slice(0, 3).map((leave) => (
-                  <div key={leave.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: leave.leaveType.color }} />
-                      <span className="text-xs text-gray-700">{leave.leaveType.name}</span>
+              <div className="flex-1">
+                <p className="font-bold text-gray-800 text-sm">
+                  {today.toLocaleDateString("en-IN", { day: "numeric", month: "short", weekday: "long" })}
+                </p>
+                <p className="text-xs text-gray-400">{hoursWorked.toFixed(1)}h / 8h</p>
+              </div>
+              <a href="/attendance" className="text-gray-400">
+                <MapPin className="w-4 h-4" />
+              </a>
+            </div>
+            <div className="px-4 pb-4">
+              <TimeWidget checkIn={checkIn} checkOut={checkOut} />
+            </div>
+          </div>
+
+          {/* On Leave This Week */}
+          <div className="bg-white rounded-2xl shadow-sm p-4">
+            <h3 className="text-base font-bold text-gray-800 mb-3">On leave this week</h3>
+            <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide">
+              {data.onLeaveToday.length === 0 ? (
+                <div className="flex flex-col items-center gap-1 shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                    <UserCheck className="w-7 h-7 text-green-500" />
+                  </div>
+                  <span className="text-[10px] text-gray-500 text-center">All at office!</span>
+                </div>
+              ) : (
+                data.onLeaveToday.map((l) => {
+                  const name = `${l.employee.firstName} ${l.employee.lastName}`;
+                  const short = `${l.employee.firstName[0]}${l.employee.lastName[0]}`;
+                  return (
+                    <div key={l.id} className="flex flex-col items-center gap-1 shrink-0">
+                      <div className="w-16 h-16 rounded-full bg-orange-400 flex items-center justify-center text-white font-bold text-lg">
+                        {short}
+                      </div>
+                      <span className="text-[10px] font-medium text-gray-700 text-center">{l.employee.firstName} {l.employee.lastName[0]}.</span>
+                      <span className="text-[9px] text-gray-400">Today</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">{leave.days}d</span>
-                      <Badge variant={leave.status === "APPROVED" ? "success" : leave.status === "REJECTED" ? "destructive" : "secondary"} className="text-[10px] px-1.5 py-0">
-                        {leave.status}
-                      </Badge>
+                  );
+                })
+              )}
+              {/* See all */}
+              <a href="/leaves" className="flex flex-col items-center gap-1 shrink-0">
+                <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Users className="w-7 h-7 text-purple-400" />
+                </div>
+                <span className="text-[10px] text-gray-500 text-center">See all{"\n"}Leaves</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Announcements */}
+          {data.announcements.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <h3 className="text-base font-bold text-gray-800 px-4 pt-4 pb-2">Announcements</h3>
+              <div className="divide-y divide-gray-50">
+                {data.announcements.slice(0, 3).map((a) => (
+                  <div key={a.id} className="px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${a.priority === "HIGH" ? "bg-red-100" : "bg-purple-100"}`}>
+                        <Megaphone className={`w-4 h-4 ${a.priority === "HIGH" ? "text-red-500" : "text-purple-500"}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="text-sm font-semibold text-gray-800 truncate">{a.title}</p>
+                          {a.priority === "HIGH" && <span className="text-[9px] bg-red-100 text-red-600 rounded-full px-1.5 py-0.5 font-medium shrink-0">URGENT</span>}
+                        </div>
+                        <p className="text-xs text-gray-500 line-clamp-2">{a.content}</p>
+                        <p className="text-[10px] text-gray-400 mt-1">{formatDate(a.createdAt)}</p>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
 
-        {/* ── RIGHT: Feed + Social ── */}
-        <div className="lg:col-span-3 space-y-4 order-1 lg:order-none">
+          {/* Holiday Carousel */}
+          <HolidayCarousel holidays={holidays} />
 
-          {/* Time widget — mobile only (inside right col so it's first on mobile) */}
-          <div className="lg:hidden">
-            <TimeWidget checkIn={checkIn} checkOut={checkOut} />
-          </div>
-
-          {/* Post / Poll / Praise */}
-          <PostFeed />
-
-          {/* Announcements */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-              <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Megaphone className="w-4 h-4 text-purple-500" />
-                Announcements
+          {/* Upcoming Birthdays */}
+          {data.upcomingBirthdays.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm p-4">
+              <h3 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <Cake className="w-4 h-4 text-pink-500" /> Upcoming Birthdays
               </h3>
-            </div>
-            {data.announcements.length === 0 ? (
-              <div className="px-4 py-6 text-center text-gray-400 text-sm">No announcements</div>
-            ) : (
-              <div className="divide-y divide-gray-50">
-                {data.announcements.map((a) => (
-                  <div key={a.id} className="px-4 py-3 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start gap-2">
-                      <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${a.priority === "HIGH" ? "bg-red-500" : a.priority === "NORMAL" ? "bg-blue-500" : "bg-gray-300"}`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">{a.title}</p>
-                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{a.content}</p>
-                      </div>
-                      <span className="text-[10px] text-gray-400 shrink-0 mt-0.5">{formatDate(a.createdAt)}</span>
+              <div className="space-y-3">
+                {data.upcomingBirthdays.slice(0, 3).map((b) => (
+                  <div key={b.id} className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 font-bold text-sm shrink-0">
+                      {b.firstName[0]}{b.lastName[0]}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Birthdays / Anniversaries / New Joinees */}
-          <BirthdaysSection
-            birthdays={data.upcomingBirthdays.map((e) => ({ name: `${e.firstName} ${e.lastName}`, date: e.nextBirthday.toISOString(), designation: e.designation ?? "" }))}
-            anniversaries={data.upcomingAnniversaries.map((e) => ({ name: `${e.firstName} ${e.lastName}`, date: e.nextAnniversary.toISOString(), years: new Date().getFullYear() - new Date(e.joiningDate).getFullYear(), designation: e.designation ?? "" }))}
-            newJoinees={data.newJoinees.map((e) => ({ name: `${e.firstName} ${e.lastName}`, date: e.joiningDate.toISOString(), designation: e.designation ?? "" }))}
-          />
-
-          {/* Payslips */}
-          {data.recentPayslips.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-teal-500" />
-                  Recent Payslips
-                </h3>
-                <a href="/payroll" className="text-xs text-purple-600 hover:underline">View All</a>
-              </div>
-              <div className="space-y-2">
-                {data.recentPayslips.map((slip) => (
-                  <div key={slip.id} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{MONTH_NAMES[slip.month - 1]} {slip.year}</p>
-                      <p className="text-xs text-gray-400">{slip.daysWorked} days worked</p>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-800">{b.firstName} {b.lastName}</p>
+                      <p className="text-xs text-gray-400">{b.designation}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-gray-900">{formatCurrency(slip.netSalary)}</p>
-                      <Badge variant={slip.status === "PUBLISHED" ? "success" : "secondary"} className="text-[10px]">{slip.status}</Badge>
-                    </div>
+                    <span className="text-xs font-medium text-pink-600">
+                      {b.nextBirthday.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -523,31 +487,210 @@ async function EmployeeDashboard({ session }: { session: { user: { name?: string
 
           {/* Goals */}
           {data.goals.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div className="bg-white rounded-2xl shadow-sm p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-purple-500" />
-                  My Goals
-                </h3>
-                <a href="/performance" className="text-xs text-purple-600 hover:underline">View All</a>
+                <h3 className="text-base font-bold text-gray-800">My Goals</h3>
+                <a href="/performance" className="text-xs text-purple-600">View All</a>
               </div>
               <div className="space-y-3">
                 {data.goals.map((goal) => (
                   <div key={goal.id}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-gray-700 truncate flex-1 mr-3">{goal.title}</span>
-                      <span className="text-xs font-semibold text-purple-600">{goal.progress}%</span>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-xs font-medium text-gray-700 truncate flex-1 mr-2">{goal.title}</span>
+                      <span className="text-xs font-bold text-purple-600">{goal.progress}%</span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-1.5">
-                      <div className="bg-purple-600 h-1.5 rounded-full transition-all" style={{ width: `${goal.progress}%` }} />
+                      <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: `${goal.progress}%` }} />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+        </div>{/* end scrollable */}
+      </div>{/* end mobile layout */}
+
+
+      {/* ════════════════════════════════════════════════
+          DESKTOP LAYOUT  (hidden lg:flex)
+      ════════════════════════════════════════════════ */}
+      <div className="hidden lg:flex flex-col min-h-full">
+        {/* ── Welcome Banner ── */}
+        <div
+          className="relative overflow-hidden px-6 py-8"
+          style={{ background: "linear-gradient(135deg, #4C1D95 0%, #5B21B6 40%, #6D28D9 70%, #7C3AED 100%)" }}
+        >
+          <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-white/5" />
+          <div className="absolute right-24 top-4 w-32 h-32 rounded-full bg-white/5" />
+          <div className="absolute -left-8 bottom-0 w-48 h-24 rounded-full bg-white/5" />
+          <div className="relative z-10">
+            <p className="text-purple-200 text-sm font-medium">{data.employee?.department?.name ?? ""}</p>
+            <h1 className="text-3xl font-bold text-white mt-1">
+              Good {greeting}, {firstName}!
+            </h1>
+            <p className="text-purple-200 text-sm mt-1">
+              {data.employee?.designation ?? "Employee"} · {today.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </p>
+          </div>
         </div>
-      </div>
+
+        {/* ── Desktop Two-Column Content ── */}
+        <div className="flex-1 p-5 grid grid-cols-1 lg:grid-cols-5 gap-5">
+
+          {/* LEFT */}
+          <div className="lg:col-span-2 space-y-4">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Quick Access</h2>
+            <TimeWidget checkIn={checkIn} checkOut={checkOut} />
+            <HolidayCarousel holidays={holidays} />
+
+            {/* On Leave Today */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-orange-500" /> On Leave Today
+                </h3>
+                <a href="/leaves" className="text-xs text-purple-600 hover:underline">View All</a>
+              </div>
+              {data.onLeaveToday.length === 0 ? (
+                <div className="flex items-center gap-3 py-2">
+                  <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center">
+                    <UserCheck className="w-5 h-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Everyone is working today!</p>
+                    <p className="text-xs text-gray-400">No one is on leave.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {data.onLeaveToday.map((l) => (
+                    <div key={l.id} className="flex items-center gap-2">
+                      <Avatar name={`${l.employee.firstName} ${l.employee.lastName}`} size="sm" color="bg-orange-500" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-gray-800 truncate">{l.employee.firstName} {l.employee.lastName}</p>
+                        <p className="text-xs text-gray-400 truncate">{l.employee.designation ?? l.employee.department?.name ?? ""}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {data.recentLeaves.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700">My Leave History</h3>
+                  <a href="/leaves" className="text-xs text-purple-600 hover:underline">View All</a>
+                </div>
+                <div className="space-y-2">
+                  {data.recentLeaves.slice(0, 3).map((leave) => (
+                    <div key={leave.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: leave.leaveType.color }} />
+                        <span className="text-xs text-gray-700">{leave.leaveType.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400">{leave.days}d</span>
+                        <Badge variant={leave.status === "APPROVED" ? "success" : leave.status === "REJECTED" ? "destructive" : "secondary"} className="text-[10px] px-1.5 py-0">
+                          {leave.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT */}
+          <div className="lg:col-span-3 space-y-4">
+            <PostFeed />
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Megaphone className="w-4 h-4 text-purple-500" /> Announcements
+                </h3>
+              </div>
+              {data.announcements.length === 0 ? (
+                <div className="px-4 py-6 text-center text-gray-400 text-sm">No announcements</div>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {data.announcements.map((a) => (
+                    <div key={a.id} className="px-4 py-3 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start gap-2">
+                        <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${a.priority === "HIGH" ? "bg-red-500" : a.priority === "NORMAL" ? "bg-blue-500" : "bg-gray-300"}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{a.title}</p>
+                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{a.content}</p>
+                        </div>
+                        <span className="text-[10px] text-gray-400 shrink-0 mt-0.5">{formatDate(a.createdAt)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <BirthdaysSection
+              birthdays={data.upcomingBirthdays.map((e) => ({ name: `${e.firstName} ${e.lastName}`, date: e.nextBirthday.toISOString(), designation: e.designation ?? "" }))}
+              anniversaries={data.upcomingAnniversaries.map((e) => ({ name: `${e.firstName} ${e.lastName}`, date: e.nextAnniversary.toISOString(), years: new Date().getFullYear() - new Date(e.joiningDate).getFullYear(), designation: e.designation ?? "" }))}
+              newJoinees={data.newJoinees.map((e) => ({ name: `${e.firstName} ${e.lastName}`, date: e.joiningDate.toISOString(), designation: e.designation ?? "" }))}
+            />
+
+            {data.recentPayslips.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-teal-500" /> Recent Payslips
+                  </h3>
+                  <a href="/payroll" className="text-xs text-purple-600 hover:underline">View All</a>
+                </div>
+                <div className="space-y-2">
+                  {data.recentPayslips.map((slip) => (
+                    <div key={slip.id} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">{MONTH_NAMES[slip.month - 1]} {slip.year}</p>
+                        <p className="text-xs text-gray-400">{slip.daysWorked} days worked</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-gray-900">{formatCurrency(slip.netSalary)}</p>
+                        <Badge variant={slip.status === "PUBLISHED" ? "success" : "secondary"} className="text-[10px]">{slip.status}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {data.goals.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-purple-500" /> My Goals
+                  </h3>
+                  <a href="/performance" className="text-xs text-purple-600 hover:underline">View All</a>
+                </div>
+                <div className="space-y-3">
+                  {data.goals.map((goal) => (
+                    <div key={goal.id}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-gray-700 truncate flex-1 mr-3">{goal.title}</span>
+                        <span className="text-xs font-semibold text-purple-600">{goal.progress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div className="bg-purple-600 h-1.5 rounded-full transition-all" style={{ width: `${goal.progress}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>{/* end desktop layout */}
+
     </div>
   );
 }
