@@ -21,7 +21,12 @@ const statusVariant: Record<AttendanceStatus, "success" | "destructive" | "warni
 
 function formatTime(date: Date | null | undefined) {
   if (!date) return "—";
-  return new Date(date).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return new Date(date).toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
+  });
 }
 
 export default async function AttendancePage({
