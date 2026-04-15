@@ -1,39 +1,88 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Clock, User, Users } from "lucide-react";
+import {
+  LayoutDashboard, UserCircle, Calendar, Target, Landmark,
+  FileText, MessageSquare, ShieldCheck, Bell,
+  Users, Clock, DollarSign, Briefcase, FileSearch, Settings
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const tabs = [
-  { href: "/dashboard",   icon: Home,  label: "HOME" },
-  { href: "/attendance",  icon: Clock, label: "ATTENDANCE" },
-  { href: "/leaves",      icon: User,  label: "ME" },
-  { href: "/employees",   icon: Users, label: "MY TEAM" },
+const employeeTabs = [
+  { href: "/dashboard",    icon: LayoutDashboard, label: "Home" },
+  { href: "/attendance",   icon: Clock,           label: "Attendance" },
+  { href: "/leaves",       icon: Calendar,        label: "Leaves" },
+  { href: "/performance",  icon: Target,          label: "Performance" },
+  { href: "/payroll",      icon: Landmark,        label: "My Pay" },
+  { href: "/documents",    icon: FileText,        label: "Documents" },
+  { href: "/chat",         icon: MessageSquare,   label: "Chat" },
+  { href: "/kyc",          icon: ShieldCheck,     label: "My KYC" },
+  { href: "/announcements",icon: Bell,            label: "Engage" },
 ];
 
-export default function MobileNav({ userName }: { userName: string }) {
+const adminTabs = [
+  { href: "/dashboard",    icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/employees",    icon: Users,           label: "Employees" },
+  { href: "/attendance",   icon: Clock,           label: "Attendance" },
+  { href: "/leaves",       icon: Calendar,        label: "Leaves" },
+  { href: "/payroll",      icon: DollarSign,      label: "Payroll" },
+  { href: "/performance",  icon: Target,          label: "Performance" },
+  { href: "/recruitment",  icon: Briefcase,       label: "Recruitment" },
+  { href: "/documents",    icon: FileText,        label: "Documents" },
+  { href: "/announcements",icon: Bell,            label: "Announcements" },
+  { href: "/chat",         icon: MessageSquare,   label: "Chat" },
+  { href: "/kyc",          icon: ShieldCheck,     label: "KYC" },
+  { href: "/reports",      icon: FileSearch,      label: "Reports" },
+  { href: "/settings",     icon: Settings,        label: "Settings" },
+];
+
+export default function MobileNav({
+  userName,
+  userRole,
+}: {
+  userName: string;
+  userRole: string;
+}) {
   const pathname = usePathname();
+  const isAdmin = userRole === "ADMIN" || userRole === "HR" || userRole === "MANAGER";
+  const tabs = isAdmin ? adminTabs : employeeTabs;
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 flex safe-area-inset-bottom">
-      {tabs.map((tab) => {
-        const active = pathname === tab.href || (tab.href !== "/dashboard" && pathname.startsWith(tab.href));
-        return (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className={cn(
-              "flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors",
-              active ? "text-purple-600" : "text-gray-400"
-            )}
-          >
-            <tab.icon className={cn("w-5 h-5", active && "stroke-[2.5]")} />
-            <span className={cn("text-[9px] font-semibold tracking-wider", active ? "text-purple-600" : "text-gray-400")}>
-              {tab.label}
-            </span>
-          </Link>
-        );
-      })}
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200">
+      {/* Scrollable strip */}
+      <div className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth">
+        {tabs.map((tab) => {
+          const active =
+            pathname === tab.href ||
+            (tab.href !== "/dashboard" && pathname.startsWith(tab.href));
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={cn(
+                "flex-none snap-start flex flex-col items-center justify-center py-2.5 gap-0.5 transition-colors",
+                "min-w-[72px] px-1",
+                active ? "text-purple-600" : "text-gray-400"
+              )}
+            >
+              <tab.icon
+                className={cn("w-5 h-5", active && "stroke-[2.5]")}
+              />
+              <span
+                className={cn(
+                  "text-[9px] font-semibold tracking-wide text-center leading-tight",
+                  active ? "text-purple-600" : "text-gray-400"
+                )}
+              >
+                {tab.label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Right fade hint */}
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/90 to-transparent" />
     </nav>
   );
 }
