@@ -7,21 +7,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { ArrowLeft, Edit, Mail, Phone, MapPin, Calendar, Briefcase, DollarSign } from "lucide-react";
+import { ArrowLeft, Edit, Mail, Phone, MapPin, Calendar, Briefcase, DollarSign, KeyRound } from "lucide-react";
+import ManageLogin from "@/components/employees/manage-login";
 
 export default async function EmployeeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const employee = await db.employee.findUnique({
-    where: { id },
-    include: {
-      department: true,
-      manager: true,
-      attendance: { orderBy: { date: "desc" }, take: 10 },
-      leaves: { orderBy: { createdAt: "desc" }, take: 5, include: { leaveType: true } },
-      payslips: { orderBy: { year: "desc" }, take: 6 },
-      documents: { orderBy: { createdAt: "desc" }, take: 5 },
-    },
-  });
+  const [employee, existingUser] = await Promise.all([
+    db.employee.findUnique({
+      where: { id },
+      include: {
+        department: true,
+        manager: true,
+        attendance: { orderBy: { date: "desc" }, take: 10 },
+        leaves: { orderBy: { createdAt: "desc" }, take: 5, include: { leaveType: true } },
+        payslips: { orderBy: { year: "desc" }, take: 6 },
+        documents: { orderBy: { createdAt: "desc" }, take: 5 },
+      },
+    }),
+    db.user.findFirst({
+      where: { employeeId: id },
+      select: { email: true, role: true },
+    }),
+  ]);
 
   if (!employee) notFound();
 
@@ -58,12 +65,19 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
           <TabsTrigger value="leaves">Leaves</TabsTrigger>
           <TabsTrigger value="payroll">Payroll</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="login" className="flex items-center gap-1.5">
+            <KeyRound className="w-3.5 h-3.5" />
+            Login
+            {!existingUser && (
+              <span className="ml-1 w-2 h-2 bg-orange-400 rounded-full inline-block" />
+            )}
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview */}
@@ -189,6 +203,24 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
                   </tbody>
                 </table>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Login */}
+        <TabsContent value="login" className="mt-4">
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-purple-600" /> HRM Login Account
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ManageLogin
+                employeeId={employee.id}
+                employeeEmail={employee.email}
+                existingLogin={existingUser}
+              />
             </CardContent>
           </Card>
         </TabsContent>

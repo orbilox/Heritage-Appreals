@@ -69,15 +69,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Auto-create user account
+    // Create user login account if requested
     if (data.createAccount !== false) {
-      const hashedPassword = await bcrypt.hash("Welcome@123", 10);
+      const loginEmail = (data.loginEmail || employee.email).trim();
+      const loginPassword = data.loginPassword || "Welcome@123";
+      const loginRole = data.loginRole || "EMPLOYEE";
+      const hashedPassword = await bcrypt.hash(loginPassword, 10);
       await db.user
         .create({
           data: {
-            email: employee.email,
+            email: loginEmail,
             password: hashedPassword,
-            role: "EMPLOYEE",
+            role: loginRole,
             employeeId: employee.id,
           },
         })

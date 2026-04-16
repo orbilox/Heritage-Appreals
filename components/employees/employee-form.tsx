@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Eye, EyeOff, KeyRound } from "lucide-react";
 
 interface Props {
   departments: { id: string; name: string }[];
@@ -70,6 +70,13 @@ export default function EmployeeForm({ departments, managers, employee }: Props)
   const [panNumber, setPanNumber] = useState(str(employee?.panNumber));
   const [aadharNumber, setAadharNumber] = useState(str(employee?.aadharNumber));
 
+  // ── Login Account ────────────────────────────────────────────────────────
+  const [createAccount, setCreateAccount] = useState(!isEdit);
+  const [loginEmail, setLoginEmail] = useState(str(employee?.email));
+  const [loginPassword, setLoginPassword] = useState("Welcome@123");
+  const [loginRole, setLoginRole] = useState("EMPLOYEE");
+  const [showPwd, setShowPwd] = useState(false);
+
   // ── Form state ──────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -83,6 +90,7 @@ export default function EmployeeForm({ departments, managers, employee }: Props)
     setLoading(true);
     setError("");
 
+    // Keep loginEmail in sync with employee email if it wasn't changed
     const payload = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
@@ -114,6 +122,11 @@ export default function EmployeeForm({ departments, managers, employee }: Props)
       ifscCode: ifscCode.trim() || null,
       panNumber: panNumber.trim() || null,
       aadharNumber: aadharNumber.trim() || null,
+      // Login account fields
+      createAccount,
+      loginEmail: (loginEmail.trim() || email.trim()),
+      loginPassword,
+      loginRole,
     };
 
     try {
@@ -324,6 +337,78 @@ export default function EmployeeForm({ departments, managers, employee }: Props)
           </div>
         </CardContent>
       </Card>
+
+      {/* Login Account */}
+      {!isEdit && (
+        <Card className="border-0 shadow-sm border-l-4 border-l-purple-500">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-purple-600" />
+                Login Account Setup
+              </CardTitle>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={createAccount}
+                  onChange={(e) => setCreateAccount(e.target.checked)}
+                  className="w-4 h-4 rounded accent-purple-600"
+                />
+                <span className="text-sm font-medium text-gray-700">Create login account</span>
+              </label>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Set the email and password the employee will use to log in to the HRM portal.
+            </p>
+          </CardHeader>
+          {createAccount && (
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label>Login Email *</Label>
+                <Input
+                  type="email"
+                  value={loginEmail || email}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="employee@company.com"
+                />
+                <p className="text-xs text-gray-400">Defaults to the work email above</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Password *</Label>
+                <div className="relative">
+                  <Input
+                    type={showPwd ? "text" : "password"}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className="pr-10"
+                    placeholder="Welcome@123"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPwd(!showPwd)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400">Share this password with the employee</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Portal Role</Label>
+                <Select value={loginRole} onValueChange={setLoginRole}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="EMPLOYEE">Employee</SelectItem>
+                    <SelectItem value="MANAGER">Manager</SelectItem>
+                    <SelectItem value="HR">HR</SelectItem>
+                    <SelectItem value="ADMIN">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       <div className="flex gap-3 pb-6">
         <Button type="submit" disabled={loading}>
