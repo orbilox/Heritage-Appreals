@@ -85,8 +85,11 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(employee, { status: 201 });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("[EMPLOYEES_POST]", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    const msg = (error as { code?: string; meta?: { target?: string[] } })?.code === "P2002"
+      ? `A record with this ${(error as { meta?: { target?: string[] } })?.meta?.target?.join(", ")} already exists`
+      : "Failed to create employee";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

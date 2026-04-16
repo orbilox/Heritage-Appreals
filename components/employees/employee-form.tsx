@@ -14,29 +14,128 @@ interface Props {
   employee?: Record<string, unknown>;
 }
 
+function str(v: unknown): string {
+  return v == null ? "" : String(v);
+}
+
+function numStr(v: unknown): string {
+  return v == null ? "0" : String(v);
+}
+
 export default function EmployeeForm({ departments, managers, employee }: Props) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const isEdit = !!employee;
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // ── Personal Info ───────────────────────────────────────────────────────
+  const [firstName, setFirstName] = useState(str(employee?.firstName));
+  const [lastName, setLastName] = useState(str(employee?.lastName));
+  const [email, setEmail] = useState(str(employee?.email));
+  const [phone, setPhone] = useState(str(employee?.phone));
+  const [dateOfBirth, setDateOfBirth] = useState(
+    employee?.dateOfBirth ? new Date(employee.dateOfBirth as string).toISOString().split("T")[0] : ""
+  );
+  const [gender, setGender] = useState(str(employee?.gender));
+  const [address, setAddress] = useState(str(employee?.address));
+  const [city, setCity] = useState(str(employee?.city));
+  const [state, setState] = useState(str(employee?.state));
+  const [pinCode, setPinCode] = useState(str(employee?.pinCode));
+
+  // ── Work Info ───────────────────────────────────────────────────────────
+  const [designation, setDesignation] = useState(str(employee?.designation));
+  const [departmentId, setDepartmentId] = useState(str(employee?.departmentId));
+  const [managerId, setManagerId] = useState(str(employee?.managerId));
+  const [employmentType, setEmploymentType] = useState(str(employee?.employmentType) || "FULL_TIME");
+  const [workLocation, setWorkLocation] = useState(str(employee?.workLocation));
+  const [joiningDate, setJoiningDate] = useState(
+    employee?.joiningDate
+      ? new Date(employee.joiningDate as string).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0]
+  );
+  const [status, setStatus] = useState(str(employee?.status) || "ACTIVE");
+
+  // ── Salary ──────────────────────────────────────────────────────────────
+  const [basicSalary, setBasicSalary] = useState(numStr(employee?.basicSalary));
+  const [hra, setHra] = useState(numStr(employee?.hra));
+  const [da, setDa] = useState(numStr(employee?.da));
+  const [ta, setTa] = useState(numStr(employee?.ta));
+  const [otherAllowance, setOtherAllowance] = useState(numStr(employee?.otherAllowance));
+  const [pfEmployee, setPfEmployee] = useState(numStr(employee?.pfEmployee));
+  const [pfEmployer, setPfEmployer] = useState(numStr(employee?.pfEmployer));
+  const [professionalTax, setProfessionalTax] = useState(numStr(employee?.professionalTax));
+
+  // ── Bank & Identity ─────────────────────────────────────────────────────
+  const [bankAccount, setBankAccount] = useState(str(employee?.bankAccount));
+  const [bankName, setBankName] = useState(str(employee?.bankName));
+  const [ifscCode, setIfscCode] = useState(str(employee?.ifscCode));
+  const [panNumber, setPanNumber] = useState(str(employee?.panNumber));
+  const [aadharNumber, setAadharNumber] = useState(str(employee?.aadharNumber));
+
+  // ── Form state ──────────────────────────────────────────────────────────
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !designation.trim() || !joiningDate) {
+      setError("Please fill in all required fields (First Name, Last Name, Email, Designation, Joining Date).");
+      return;
+    }
     setLoading(true);
     setError("");
-    const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData);
+
+    const payload = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim(),
+      phone: phone.trim() || null,
+      dateOfBirth: dateOfBirth || null,
+      gender: gender || null,
+      address: address.trim() || null,
+      city: city.trim() || null,
+      state: state.trim() || null,
+      pinCode: pinCode.trim() || null,
+      designation: designation.trim(),
+      departmentId: departmentId || null,
+      managerId: managerId || null,
+      employmentType: employmentType || "FULL_TIME",
+      workLocation: workLocation.trim() || null,
+      joiningDate,
+      status: status || "ACTIVE",
+      basicSalary: parseFloat(basicSalary) || 0,
+      hra: parseFloat(hra) || 0,
+      da: parseFloat(da) || 0,
+      ta: parseFloat(ta) || 0,
+      otherAllowance: parseFloat(otherAllowance) || 0,
+      pfEmployee: parseFloat(pfEmployee) || 0,
+      pfEmployer: parseFloat(pfEmployer) || 0,
+      professionalTax: parseFloat(professionalTax) || 0,
+      bankAccount: bankAccount.trim() || null,
+      bankName: bankName.trim() || null,
+      ifscCode: ifscCode.trim() || null,
+      panNumber: panNumber.trim() || null,
+      aadharNumber: aadharNumber.trim() || null,
+    };
 
     try {
-      const res = await fetch(isEdit ? `/api/employees/${(employee as {id:string}).id}` : "/api/employees", {
+      const url = isEdit ? `/api/employees/${(employee as { id: string }).id}` : "/api/employees";
+      const res = await fetch(url, {
         method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
+
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to save");
+        const text = await res.text();
+        let msg = "Failed to save employee";
+        try {
+          const json = JSON.parse(text);
+          msg = json.error || msg;
+        } catch {
+          // non-JSON error body
+        }
+        throw new Error(msg);
       }
+
       router.push("/employees");
       router.refresh();
     } catch (err) {
@@ -47,35 +146,37 @@ export default function EmployeeForm({ departments, managers, employee }: Props)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">{error}</div>}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">{error}</div>
+      )}
 
       {/* Personal Info */}
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-4"><CardTitle className="text-base">Personal Information</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="firstName">First Name *</Label>
-            <Input id="firstName" name="firstName" required defaultValue={employee?.firstName as string} placeholder="John" />
+            <Label>First Name *</Label>
+            <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" required />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="lastName">Last Name *</Label>
-            <Input id="lastName" name="lastName" required defaultValue={employee?.lastName as string} placeholder="Doe" />
+            <Label>Last Name *</Label>
+            <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Doe" required />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="email">Email *</Label>
-            <Input id="email" name="email" type="email" required defaultValue={employee?.email as string} placeholder="john@company.com" />
+            <Label>Email *</Label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@company.com" required />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="phone">Phone</Label>
-            <Input id="phone" name="phone" defaultValue={employee?.phone as string} placeholder="+91 98765 43210" />
+            <Label>Phone</Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 98765 43210" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="dateOfBirth">Date of Birth</Label>
-            <Input id="dateOfBirth" name="dateOfBirth" type="date" defaultValue={employee?.dateOfBirth as string} />
+            <Label>Date of Birth</Label>
+            <Input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="gender">Gender</Label>
-            <Select name="gender" defaultValue={(employee?.gender as string) ?? ""}>
+            <Label>Gender</Label>
+            <Select value={gender} onValueChange={setGender}>
               <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="MALE">Male</SelectItem>
@@ -85,20 +186,20 @@ export default function EmployeeForm({ departments, managers, employee }: Props)
             </Select>
           </div>
           <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
-            <Label htmlFor="address">Address</Label>
-            <Input id="address" name="address" defaultValue={employee?.address as string} placeholder="123 Main Street" />
+            <Label>Address</Label>
+            <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Main Street" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="city">City</Label>
-            <Input id="city" name="city" defaultValue={employee?.city as string} placeholder="Mumbai" />
+            <Label>City</Label>
+            <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Mumbai" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="state">State</Label>
-            <Input id="state" name="state" defaultValue={employee?.state as string} placeholder="Maharashtra" />
+            <Label>State</Label>
+            <Input value={state} onChange={(e) => setState(e.target.value)} placeholder="Maharashtra" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="pinCode">PIN Code</Label>
-            <Input id="pinCode" name="pinCode" defaultValue={employee?.pinCode as string} placeholder="400001" />
+            <Label>PIN Code</Label>
+            <Input value={pinCode} onChange={(e) => setPinCode(e.target.value)} placeholder="400001" />
           </div>
         </CardContent>
       </Card>
@@ -108,12 +209,12 @@ export default function EmployeeForm({ departments, managers, employee }: Props)
         <CardHeader className="pb-4"><CardTitle className="text-base">Work Information</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="designation">Designation *</Label>
-            <Input id="designation" name="designation" required defaultValue={employee?.designation as string} placeholder="Software Engineer" />
+            <Label>Designation *</Label>
+            <Input value={designation} onChange={(e) => setDesignation(e.target.value)} placeholder="Software Engineer" required />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="departmentId">Department</Label>
-            <Select name="departmentId" defaultValue={(employee?.departmentId as string) ?? ""}>
+            <Label>Department</Label>
+            <Select value={departmentId} onValueChange={setDepartmentId}>
               <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
               <SelectContent>
                 {departments.map((d) => (
@@ -123,22 +224,21 @@ export default function EmployeeForm({ departments, managers, employee }: Props)
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="managerId">Manager</Label>
-            <Select name="managerId" defaultValue={(employee?.managerId as string) ?? ""}>
+            <Label>Manager</Label>
+            <Select value={managerId} onValueChange={setManagerId}>
               <SelectTrigger><SelectValue placeholder="Select manager" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No manager</SelectItem>
                 {managers.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
-                    {m.firstName} {m.lastName} {m.designation ? `— ${m.designation}` : ""}
+                    {m.firstName} {m.lastName}{m.designation ? ` — ${m.designation}` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="employmentType">Employment Type</Label>
-            <Select name="employmentType" defaultValue={(employee?.employmentType as string) ?? "FULL_TIME"}>
+            <Label>Employment Type</Label>
+            <Select value={employmentType} onValueChange={setEmploymentType}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="FULL_TIME">Full Time</SelectItem>
@@ -149,18 +249,16 @@ export default function EmployeeForm({ departments, managers, employee }: Props)
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="workLocation">Work Location</Label>
-            <Input id="workLocation" name="workLocation" defaultValue={employee?.workLocation as string} placeholder="Mumbai Office" />
+            <Label>Work Location</Label>
+            <Input value={workLocation} onChange={(e) => setWorkLocation(e.target.value)} placeholder="Mumbai Office" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="joiningDate">Joining Date *</Label>
-            <Input id="joiningDate" name="joiningDate" type="date" required
-              defaultValue={employee?.joiningDate ? new Date(employee.joiningDate as string).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]}
-            />
+            <Label>Joining Date *</Label>
+            <Input type="date" value={joiningDate} onChange={(e) => setJoiningDate(e.target.value)} required />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="status">Status</Label>
-            <Select name="status" defaultValue={(employee?.status as string) ?? "ACTIVE"}>
+            <Label>Status</Label>
+            <Select value={status} onValueChange={setStatus}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ACTIVE">Active</SelectItem>
@@ -178,19 +276,23 @@ export default function EmployeeForm({ departments, managers, employee }: Props)
         <CardHeader className="pb-4"><CardTitle className="text-base">Salary & Compensation</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { id: "basicSalary", label: "Basic Salary" },
-            { id: "hra", label: "HRA" },
-            { id: "da", label: "DA" },
-            { id: "ta", label: "TA" },
-            { id: "otherAllowance", label: "Other Allowance" },
-            { id: "pfEmployee", label: "PF (Employee)" },
-            { id: "pfEmployer", label: "PF (Employer)" },
-            { id: "professionalTax", label: "Professional Tax" },
+            { label: "Basic Salary", value: basicSalary, set: setBasicSalary },
+            { label: "HRA", value: hra, set: setHra },
+            { label: "DA", value: da, set: setDa },
+            { label: "TA", value: ta, set: setTa },
+            { label: "Other Allowance", value: otherAllowance, set: setOtherAllowance },
+            { label: "PF (Employee)", value: pfEmployee, set: setPfEmployee },
+            { label: "PF (Employer)", value: pfEmployer, set: setPfEmployer },
+            { label: "Professional Tax", value: professionalTax, set: setProfessionalTax },
           ].map((f) => (
-            <div key={f.id} className="space-y-1.5">
-              <Label htmlFor={f.id}>{f.label} (₹)</Label>
-              <Input id={f.id} name={f.id} type="number" min="0" step="0.01"
-                defaultValue={(employee?.[f.id] as number) ?? 0} placeholder="0" />
+            <div key={f.label} className="space-y-1.5">
+              <Label>{f.label} (₹)</Label>
+              <Input
+                type="number" min="0" step="0.01"
+                value={f.value}
+                onChange={(e) => f.set(e.target.value)}
+                placeholder="0"
+              />
             </div>
           ))}
         </CardContent>
@@ -201,29 +303,29 @@ export default function EmployeeForm({ departments, managers, employee }: Props)
         <CardHeader className="pb-4"><CardTitle className="text-base">Bank & Identity</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="bankAccount">Bank Account No.</Label>
-            <Input id="bankAccount" name="bankAccount" defaultValue={employee?.bankAccount as string} />
+            <Label>Bank Account No.</Label>
+            <Input value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="bankName">Bank Name</Label>
-            <Input id="bankName" name="bankName" defaultValue={employee?.bankName as string} placeholder="HDFC Bank" />
+            <Label>Bank Name</Label>
+            <Input value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="HDFC Bank" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="ifscCode">IFSC Code</Label>
-            <Input id="ifscCode" name="ifscCode" defaultValue={employee?.ifscCode as string} placeholder="HDFC0001234" />
+            <Label>IFSC Code</Label>
+            <Input value={ifscCode} onChange={(e) => setIfscCode(e.target.value)} placeholder="HDFC0001234" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="panNumber">PAN Number</Label>
-            <Input id="panNumber" name="panNumber" defaultValue={employee?.panNumber as string} placeholder="ABCDE1234F" />
+            <Label>PAN Number</Label>
+            <Input value={panNumber} onChange={(e) => setPanNumber(e.target.value)} placeholder="ABCDE1234F" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="aadharNumber">Aadhar Number</Label>
-            <Input id="aadharNumber" name="aadharNumber" defaultValue={employee?.aadharNumber as string} placeholder="1234 5678 9012" />
+            <Label>Aadhar Number</Label>
+            <Input value={aadharNumber} onChange={(e) => setAadharNumber(e.target.value)} placeholder="1234 5678 9012" />
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 pb-6">
         <Button type="submit" disabled={loading}>
           {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           <Save className="w-4 h-4 mr-2" />
