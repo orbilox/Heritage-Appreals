@@ -24,7 +24,7 @@ const testimonials = [
   { name: "Priya Sharma", role: "HR Director, TechCorp", quote: "WorkNest transformed our HR processes. We reduced payroll processing time by 80%.", avatar: "PS" },
   { name: "Rahul Verma", role: "CEO, StartupXYZ", quote: "The best HR platform we've used. The attendance and leave management is seamless.", avatar: "RV" },
   { name: "Anita Patel", role: "Operations Manager, RetailCo", quote: "Onboarding new employees is now a breeze. WorkNest is simply outstanding.", avatar: "AP" },
-];
+]; 
 
 export default function LandingPage() {
   return (
